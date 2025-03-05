@@ -9,7 +9,6 @@ yarn.lock
 .pnp.*
 
 # TypeScript/JavaScript build artifacts
-dist/
 build/
 out/
 *.js.map
