@@ -258,7 +258,7 @@ function analyzeCodeSingleReview(parsedDiff, prDetails) {
         return reviewText;
     });
 }
-function main() {
+function index() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const prDetails = yield getPRDetails();
@@ -295,4 +295,4 @@ function main() {
         }
     });
 }
-main();
+index();

@@ -237,7 +237,7 @@ async function analyzeCodeSingleReview(
     return reviewText;
 }
 
-async function main(): Promise<void> {
+async function index(): Promise<void> {
     try {
         const prDetails = await getPRDetails();
         const eventData = JSON.parse(
@@ -286,4 +286,4 @@ async function main(): Promise<void> {
     }
 }
 
-main();
+index();
