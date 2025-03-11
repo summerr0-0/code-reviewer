@@ -65,3 +65,5 @@ coverage/
 # Optional eslint cache
 .eslintcache
 
+# Include dist directory for GitHub Actions
+!dist/
