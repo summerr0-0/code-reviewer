@@ -5,10 +5,14 @@ import {Octokit} from "@octokit/rest";
 import parseDiff, {File} from "parse-diff";
 import { minimatch } from "minimatch";
 
+// GitHub API 토큰과 OpenAI API 키 설정
+// GitHub Actions에서 설정한 환경변수를 가져와 API 접근 권한 확보
 const GITHUB_TOKEN: string = core.getInput("GITHUB_TOKEN");
 const OPENAI_API_KEY: string = core.getInput("OPENAI_API_KEY");
 const OPENAI_API_MODEL: string = core.getInput("OPENAI_API_MODEL");
 
+// API 클라이언트 초기화: GitHub API와 OpenAI API 클라이언트 설정
+// 두 API를 통해 PR 정보 가져오기 및 AI 리뷰 생성이 가능해짐
 const octokit = new Octokit({ auth: GITHUB_TOKEN });
 const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
@@ -20,6 +24,8 @@ interface PRDetails {
     description: string;
 }
 
+// PR 정보 추출 함수: GitHub 이벤트에서 PR 세부 정보 가져오기
+// GitHub Actions 실행 시 생성되는 이벤트 파일에서 PR 정보를 파싱
 async function getPRDetails(): Promise<PRDetails> {
     // GitHub 이벤트 파일에서 PR 정보 읽어오기
     const eventData = JSON.parse(
@@ -43,6 +49,8 @@ async function getPRDetails(): Promise<PRDetails> {
     };
 }
 
+// Diff 추출 함수: PR의 코드 변경사항(diff) 가져오기
+// PR 이벤트 타입(opened/synchronize)에 따라 적절한 방식으로 diff 정보 획득
 async function getDiff(
     owner: string,
     repo: string,
@@ -50,6 +58,8 @@ async function getDiff(
     eventData: any
 ): Promise<string | null> {
     // opened/synchronize 등에 따라 diff 가져오기
+    //opened : pr생성 후 최초 커밋을 했을 때 업데이트되는 이벤트
+    //synchronize : pr생성 후 새로운 커밋을 했을 때 업데이트되는 이벤트
     if (eventData.action === "opened") {
         const response = await octokit.pulls.get({
             owner,
@@ -79,6 +89,8 @@ async function getDiff(
     }
 }
 
+// 롬프트 생성 함수: OpenAI에 전달할 체계화된 프롬프트 설계
+// AI가 구조화된 리뷰를 생성하도록 템플릿 형태의 프롬프트 제공
 function createPrompt(aggregatedDiff: string, prDetails: PRDetails): string {
     // Python 코드의 create_prompt와 동일한 아이디어:
     // 전체 diff를 하나로 합쳐 단일 리뷰 요청.
@@ -154,6 +166,8 @@ ${aggregatedDiff}
 `.trim();
 }
 
+// AI 리뷰 생성 함수: OpenAI API를 통해 코드 리뷰 생성
+// 프롬프트를 전달하고 응답을 받아 정제하는 핵심 함수
 async function getAiReviewText(prompt: string): Promise<string> {
     try {
         const response = await openai.chat.completions.create({
@@ -173,6 +187,8 @@ async function getAiReviewText(prompt: string): Promise<string> {
     }
 }
 
+// 통합 Diff 생성 함수: 개별 파일 diff를 하나로 통합
+// 분석을 위해 여러 파일의 변경사항을 하나의 문자열로 통합
 function createAggregatedDiff(parsedDiff: File[]): string {
     const lines: string[] = [];
 
@@ -196,6 +212,8 @@ function createAggregatedDiff(parsedDiff: File[]): string {
     return lines.join("\n");
 }
 
+// 코멘트 생성 함수: GitHub PR에 리뷰 코멘트 작성
+// 생성된 AI 리뷰를 PR에 코멘트로 게시하는 기능
 async function createIssueComment(
     owner: string,
     repo: string,
@@ -218,6 +236,8 @@ async function createIssueComment(
     }
 }
 
+// 통합 코드 분석 함수: diff 분석과 AI 리뷰를 통합 처리
+// 코드 변경사항을 분석하고 AI 리뷰를 생성하는 주요 프로세스
 async function analyzeCodeSingleReview(
     parsedDiff: File[],
     prDetails: PRDetails
@@ -237,13 +257,17 @@ async function analyzeCodeSingleReview(
     return reviewText;
 }
 
+// 메인 실행 함수: 전체 워크플로우 조정 및 실행
+// GitHub Actions에서 실행될 때 전체 프로세스를 조율하는 메인 함수
 async function index(): Promise<void> {
     try {
+        //PR 정보 수집: PR 세부 정보와 이벤트 데이터 로드
         const prDetails = await getPRDetails();
         const eventData = JSON.parse(
             readFileSync(process.env.GITHUB_EVENT_PATH || "", "utf8")
         );
 
+        // Diff 정보 획득: PR의 코드 변경사항 가져오기
         const diff = await getDiff(prDetails.owner, prDetails.repo, prDetails.pull_number, eventData);
         if (!diff) {
             core.info("No diff found.");
@@ -266,9 +290,11 @@ async function index(): Promise<void> {
             );
         });
 
+        //코드 분석 및 리뷰 생성: AI를 통한 코드 분석 실행
         // 단일 종합 리뷰 생성
         const reviewText = await analyzeCodeSingleReview(filteredDiff, prDetails);
 
+        //결과 게시: 분석 결과를 GitHub PR에 게시
         if (reviewText) {
             // 하나의 이슈 코멘트로 작성
             await createIssueComment(
@@ -286,4 +312,5 @@ async function index(): Promise<void> {
     }
 }
 
+//실행
 index();

@@ -1,23 +1,36 @@
+# GitHub Action 이름
 name: "AI Code Review Action"
 description: "Perform code reviews and comment on diffs using OpenAI API."
+
 inputs:
+  # GitHub 토큰: 저장소 접근 및 PR 코멘트를 위한 필수 인증 토큰
   GITHUB_TOKEN:
     description: "GitHub token to interact with the repository."
     required: true
+  
+  # OpenAI API 키: AI 리뷰 생성을 위한 OpenAI API 접근 키
   OPENAI_API_KEY:
     description: "OpenAI API key for GPT."
     required: true
+  
+  # OpenAI 모델 선택: 사용할 AI 모델 지정 (기본값: gpt-4)
   OPENAI_API_MODEL:
     description: "OpenAI API model."
     required: false
     default: "gpt-4"
+  
+  # 제외 패턴: 분석에서 제외할 파일 패턴 (예: 자동생성 파일, 테스트 데이터)
   exclude:
     description: "Glob patterns to exclude files from the diff analysis"
     required: false
     default: ""
+
+# 실행 환경 설정: Node.js 환경에서 스크립트 실행
 runs:
   using: "node16"
   main: "dist/index.js"
+
+# 브랜딩 설정: Marketplace에 표시될 아이콘 및 색상 정의
 branding:
   icon: "star"
   color: "green"
