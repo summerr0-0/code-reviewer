@@ -2,7 +2,7 @@
   "name": "open-ai-reviewer",
   "version": "1.0.0",
   "description": "Open AI powered code reviews",
-  "main": "lib/main.js",
+  "main": "dist/index.js",
   "author": "Ville Saukkonen",
   "license": "MIT",
   "scripts": {
