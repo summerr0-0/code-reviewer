@@ -12,7 +12,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     // GitHub Webhook 이벤트 처리
     const payload = JSON.parse(event.body || '{}');
     const githubToken = process.env.GITHUB_TOKEN;
-    const openaiModel = process.env.OPENAI_API_MODEL || "gpt-4";
+    const openaiModel = "gpt-4";
     
     // GitHub 이벤트 타입 확인 (pull_request 이벤트만 처리)
     if (payload.action !== 'opened' && payload.action !== 'synchronize') {
