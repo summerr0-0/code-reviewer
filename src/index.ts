@@ -281,11 +281,11 @@ async function index(): Promise<void> {
         const excludePatterns = core
             .getInput("exclude")
             .split(",")
-            .map((s) => s.trim())
-            .filter((s) => s.length > 0);
+            .map((s: string) => s.trim())
+            .filter((s: string) => s.length > 0);
 
         const filteredDiff = parsedDiff.filter((file) => {
-            return !excludePatterns.some((pattern) =>
+            return !excludePatterns.some((pattern: string) =>
                 minimatch(file.to ?? "", pattern)
             );
         });
