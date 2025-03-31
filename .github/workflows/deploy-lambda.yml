@@ -45,4 +45,9 @@ jobs:
         run: |
           aws lambda update-function-configuration \
             --function-name irin-code-reviewer-bot \
-            --environment "Variables={GITHUB_TOKEN=${{ secrets.GH_TOKEN }},OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}"
+            --environment '{
+              "Variables": {
+                "GITHUB_TOKEN": "${{ secrets.GH_TOKEN }}",
+                "OPENAI_API_KEY": "${{ secrets.OPENAI_API_KEY }}"
+              }
+            }'
