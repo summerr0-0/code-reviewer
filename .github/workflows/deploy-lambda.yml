@@ -41,13 +41,14 @@ jobs:
             --zip-file fileb://$(pwd)/dist/index.js.zip \
             --publish
 
+      - name: Wait for function update to complete
+        run: |
+          echo "Waiting for Lambda function update to complete..."
+          sleep 30
+          aws lambda wait function-active-v2 --function-name irin-code-reviewer-bot
+
       - name: Update function configuration
         run: |
           aws lambda update-function-configuration \
             --function-name irin-code-reviewer-bot \
-            --environment '{
-              "Variables": {
-                "GITHUB_TOKEN": "${{ secrets.GH_TOKEN }}",
-                "OPENAI_API_KEY": "${{ secrets.OPENAI_API_KEY }}"
-              }
-            }'
+            --environment "{\"Variables\":{\"GITHUB_TOKEN\":\"${{ secrets.GH_TOKEN }}\",\"OPENAI_API_KEY\":\"${{ secrets.OPENAI_API_KEY }}\"}}"
