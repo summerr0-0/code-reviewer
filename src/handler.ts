@@ -1,18 +1,22 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { Octokit } from "@octokit/rest";
-import OpenAI from "openai";
 import parseDiff, { File } from "parse-diff";
 import { minimatch } from "minimatch";
+import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime';
 
-// API 클라이언트 초기화
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// AWS Bedrock 클라이언트 초기화
+const bedrockClient = new BedrockRuntimeClient({ 
+  region: process.env.AWS_REGION || 'us-east-1'
+});
+
+// 사용할 모델 ID (Anthropic Claude3 Haiku 기본)
+const MODEL_ID = process.env.BEDROCK_MODEL_ID || 'anthropic.claude-3-haiku-20240307-v1:0';
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
     // GitHub Webhook 이벤트 처리
     const payload = JSON.parse(event.body || '{}');
     const githubToken = process.env.GITHUB_TOKEN;
-    const openaiModel = "gpt-4";
     
     // GitHub 이벤트 타입 확인 (pull_request 이벤트만 처리)
     if (payload.action !== 'opened' && payload.action !== 'synchronize') {
@@ -63,7 +67,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     });
     
     // 코드 분석 및 리뷰 생성
-    const reviewText = await analyzeCodeSingleReview(filteredDiff, prDetails, openaiModel);
+    const reviewText = await analyzeCodeSingleReview(filteredDiff, prDetails);
     
     // GitHub PR에 코멘트 작성
     if (reviewText) {
@@ -190,7 +194,7 @@ Pull request description:
 ${prDetails.description}
 ---
 
-아래는 Pull Request에서 변경된 코드 diff 전체입니다:
+아래는 Pull Request에서, 변경된 코드 diff 전체입니다:
 (diff 시작)
 ${aggregatedDiff}
 (diff 끝)
@@ -199,22 +203,49 @@ ${aggregatedDiff}
 `.trim();
 }
 
-// AI 리뷰 생성 함수
-async function getAiReviewText(prompt: string, model: string): Promise<string> {
+// AWS Bedrock을 사용하여 AI 리뷰 생성 함수
+async function getAiReviewText(prompt: string): Promise<string> {
   try {
-    const response = await openai.chat.completions.create({
-      model: model,
-      messages: [{ role: "system", content: prompt }],
+    let content = '';
+    
+    // 모델별 요청 형식 구성 (Anthropic Claude 형식 사용)
+    const modelInput = {
+      anthropic_version: "bedrock-2023-05-31",
       max_tokens: 1000,
       temperature: 0.2,
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: prompt
+            }
+          ]
+        }
+      ]
+    };
+
+    // BedrockClient를 사용하여 API 호출
+    const command = new InvokeModelCommand({
+      modelId: MODEL_ID,
+      contentType: 'application/json',
+      body: JSON.stringify(modelInput)
     });
 
-    let content = response.choices[0].message?.content || "";
+    const response = await bedrockClient.send(command);
+    
+    // 응답 처리
+    if (response.body) {
+      const responseBody = JSON.parse(Buffer.from(response.body).toString('utf-8'));
+      content = responseBody.content?.[0]?.text || '';
+    }
+
     // 코드 펜스 제거
     content = content.replace(/```(\w+)?/g, "").replace(/```/g, "").trim();
     return content;
   } catch (error) {
-    console.error(`Error getting AI response: ${error}`);
+    console.error(`Error getting AI response from Bedrock: ${error}`);
     return "";
   }
 }
@@ -270,8 +301,7 @@ async function createIssueComment(
 // 통합 코드 분석 함수
 async function analyzeCodeSingleReview(
   parsedDiff: File[],
-  prDetails: any,
-  model: string
+  prDetails: any
 ): Promise<string> {
   // 전체 추가 라인을 합친 aggregatedDiff 생성
   const aggregatedDiff = createAggregatedDiff(parsedDiff);
@@ -283,7 +313,7 @@ async function analyzeCodeSingleReview(
   // 프롬프트 생성
   const prompt = createPrompt(aggregatedDiff, prDetails);
 
-  // AI 리뷰 텍스트 받기
-  const reviewText = await getAiReviewText(prompt, model);
+  // AWS Bedrock을 통한 AI 리뷰 텍스트 받기
+  const reviewText = await getAiReviewText(prompt);
   return reviewText;
 }
