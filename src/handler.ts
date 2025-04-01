@@ -6,7 +6,7 @@ import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedroc
 
 // AWS Bedrock 클라이언트 초기화
 const bedrockClient = new BedrockRuntimeClient({ 
-  region: 'us-east-1'
+  region: 'ap-southeast-2'
 });
 
 // 사용할 모델 ID (Anthropic Claude3 Haiku 기본)
