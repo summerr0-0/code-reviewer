@@ -54,26 +54,3 @@ jobs:
             --environment "{\"Variables\":{\
               \"GITHUB_TOKEN\":\"${{ secrets.GH_TOKEN }}\"\
             }}"
-
-      - name: Update Lambda IAM Role
-        run: |
-          # AWS IAM 역할에 Bedrock 권한 추가
-          aws lambda get-function --function-name irin-code-reviewer-bot --query 'Configuration.Role' --output text > role-arn.txt
-          ROLE_NAME=$(cat role-arn.txt | cut -d'/' -f2)
-          
-          # Bedrock 정책 생성 (필요시)
-          aws iam put-role-policy \
-            --role-name $ROLE_NAME \
-            --policy-name BedrockAccess \
-            --policy-document '{
-              "Version": "2012-10-17",
-              "Statement": [
-                {
-                  "Effect": "Allow",
-                  "Action": [
-                    "bedrock:InvokeModel"
-                  ],
-                  "Resource": "*"
-                }
-              ]
-            }'
