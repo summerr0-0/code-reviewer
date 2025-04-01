@@ -6,11 +6,11 @@ import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedroc
 
 // AWS Bedrock 클라이언트 초기화
 const bedrockClient = new BedrockRuntimeClient({ 
-  region: process.env.AWS_REGION || 'us-east-1'
+  region: 'us-east-1'
 });
 
 // 사용할 모델 ID (Anthropic Claude3 Haiku 기본)
-const MODEL_ID = process.env.BEDROCK_MODEL_ID || 'anthropic.claude-3-haiku-20240307-v1:0';
+const MODEL_ID = 'anthropic.claude-3-haiku-20240307-v1:0';
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {

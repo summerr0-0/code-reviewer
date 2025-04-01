@@ -52,9 +52,7 @@ jobs:
           aws lambda update-function-configuration \
             --function-name irin-code-reviewer-bot \
             --environment "{\"Variables\":{\
-              \"GITHUB_TOKEN\":\"${{ secrets.GH_TOKEN }}\",\
-              \"AWS_REGION\":\"ap-southeast-2\",\
-              \"BEDROCK_MODEL_ID\":\"anthropic.claude-3-haiku-20240307-v1:0\"\
+              \"GITHUB_TOKEN\":\"${{ secrets.GH_TOKEN }}\"\
             }}"
 
       - name: Update Lambda IAM Role
