@@ -1,11 +1,12 @@
 {
-  "name": "github-reviewer-lambda",
+  "name": "github-reviewer-app",
   "version": "1.0.0",
-  "description": "GitHub PR reviewer powered by AWS Bedrock deployed on AWS Lambda",
-  "main": "dist/handler.js",
+  "description": "GitHub PR reviewer powered by AWS Bedrock deployed as GitHub App",
+  "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "package": "esbuild src/handler.ts --bundle --platform=node --target=node16 --outfile=dist/index.js"
+    "package": "esbuild src/index.ts --bundle --platform=node --target=node16 --outfile=dist/index.js",
+    "start": "probot run ./dist/index.js"
   },
   "dependencies": {
     "@actions/core": "^1.10.1",
@@ -13,7 +14,9 @@
     "@octokit/rest": "^19.0.7",
     "minimatch": "^7.4.2",
     "openai": "^4.20.1",
-    "parse-diff": "^0.11.1"
+    "parse-diff": "^0.11.1",
+    "probot": "^12.3.3",
+    "smee-client": "^1.2.3"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.92",
@@ -25,11 +28,15 @@
     "type": "git",
     "url": "git+https://github.com/summerr0-0/code-reviewer.git"
   },
-  "keywords": [],
+  "keywords": [
+    "probot",
+    "github-app",
+    "code-review",
+    "aws-bedrock"
+  ],
   "author": "",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/summerr0-0/code-reviewer/issues"
-  },
-  "homepage": "https://github.com/summerr0-0/code-reviewer#readme"
+  "engines": {
+    "node": ">= 16.0.0"
+  }
 }
